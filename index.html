@@ -1,0 +1,1064 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Data Presentation</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  /* ── Google Font ── */
+  @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+  :root {
+    --bg:       #0f0f13;
+    --surface:  #1a1a22;
+    --border:   #2a2a38;
+    --accent:   #7c6df0;
+    --accent2:  #e8645a;
+    --accent3:  #3ecfaa;
+    --accent4:  #f0b429;
+    --text:     #f0eff8;
+    --muted:    #8b8aA0;
+    --slide-w:  900px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    user-select: none;
+  }
+
+  /* ── Deck wrapper ── */
+  #deck {
+    width: var(--slide-w);
+    max-width: 96vw;
+    position: relative;
+  }
+
+  /* ── Slides ── */
+  .slide {
+    display: none;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 44px 48px 36px;
+    min-height: 520px;
+    flex-direction: column;
+    animation: fadeIn .35s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  .slide.active { display: flex; }
+
+  @keyframes fadeIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:none; } }
+
+  /* decorative corner accent */
+  .slide::before {
+    content: '';
+    position: absolute;
+    top: -60px; right: -60px;
+    width: 200px; height: 200px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(124,109,240,.18) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  /* ── Slide header ── */
+  .slide-tag {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 8px;
+  }
+  .slide-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 28px;
+    line-height: 1.2;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+  .slide-sub {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 28px;
+    line-height: 1.6;
+  }
+
+  /* ── Chart container ── */
+  .chart-wrap {
+    flex: 1;
+    position: relative;
+    min-height: 280px;
+  }
+  .chart-wrap canvas { width: 100% !important; }
+
+  /* ── Cover slide ── */
+  .cover {
+    justify-content: center;
+    align-items: flex-start;
+    gap: 0;
+  }
+  .cover .slide-title { font-size: 40px; margin-bottom: 14px; }
+  .cover .slide-sub   { font-size: 15px; max-width: 560px; margin-bottom: 0; }
+  .cover-meta {
+    margin-top: auto;
+    font-size: 12px;
+    color: var(--muted);
+    display: flex;
+    gap: 24px;
+  }
+  .cover-meta span { display: flex; align-items: center; gap: 6px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+
+  /* ── Stats row ── */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    margin-bottom: 28px;
+  }
+  .stat-card {
+    background: rgba(255,255,255,.04);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+  }
+  .stat-val  { font-size: 26px; font-weight: 600; color: var(--text); }
+  .stat-label{ font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+  /* ── Two-col layout ── */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; flex: 1; }
+
+  /* ── Data note box ── */
+  .data-note {
+    background: rgba(124,109,240,.08);
+    border: 1px dashed rgba(124,109,240,.35);
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 14px;
+    line-height: 1.6;
+  }
+  .data-note strong { color: var(--accent); }
+
+  /* ── Navigation ── */
+  #nav {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-top: 20px;
+    width: var(--slide-w);
+    max-width: 96vw;
+    justify-content: space-between;
+  }
+  .nav-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 10px;
+    padding: 10px 22px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background .2s, border-color .2s;
+  }
+  .nav-btn:hover { background: var(--border); border-color: var(--accent); }
+  .nav-btn:disabled { opacity: .3; cursor: default; }
+
+  #progress-wrap {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  #progress-bar-bg {
+    flex: 1;
+    height: 3px;
+    background: var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  #progress-bar {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 4px;
+    transition: width .3s ease;
+  }
+  #slide-count { font-size: 12px; color: var(--muted); white-space: nowrap; }
+
+  /* ── Keyboard hint ── */
+  #hint {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 10px;
+    opacity: .6;
+  }
+
+  /* ── Legend ── */
+  .legend {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+  }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
+  .legend-dot  { width: 10px; height: 10px; border-radius: 50%; }
+
+  /* ── Bar Chart Race (Slide 10) ── */
+  #race-wrap {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    justify-content: center;
+    min-height: 300px;
+    position: relative;
+  }
+  .race-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    height: 38px;
+    margin-bottom: 6px;
+    transition: transform .4s ease;
+  }
+  .race-label {
+    width: 110px;
+    font-size: 12px;
+    color: var(--muted);
+    text-align: right;
+    flex-shrink: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: color .3s;
+  }
+  .race-label.top { color: var(--text); font-weight: 600; }
+  .race-bar-bg {
+    flex: 1;
+    height: 26px;
+    background: rgba(255,255,255,.04);
+    border-radius: 6px;
+    overflow: hidden;
+    position: relative;
+  }
+  .race-bar {
+    height: 100%;
+    border-radius: 6px;
+    transition: width .55s cubic-bezier(.4,0,.2,1), background .4s;
+    min-width: 4px;
+  }
+  .race-val {
+    width: 52px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text);
+    flex-shrink: 0;
+    transition: color .3s;
+  }
+  #race-year-display {
+    position: absolute;
+    bottom: 8px;
+    right: 0;
+    font-family: 'DM Serif Display', serif;
+    font-size: 52px;
+    color: rgba(255,255,255,.07);
+    line-height: 1;
+    pointer-events: none;
+    transition: opacity .3s;
+  }
+  #race-controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 10px;
+  }
+  .race-btn {
+    background: rgba(124,109,240,.15);
+    border: 1px solid rgba(124,109,240,.35);
+    color: var(--accent);
+    border-radius: 8px;
+    padding: 7px 18px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background .2s;
+  }
+  .race-btn:hover { background: rgba(124,109,240,.28); }
+  #race-speed {
+    font-size: 12px;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+  }
+  #race-speed select {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 6px;
+    padding: 4px 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    cursor: pointer;
+  }
+  #race-progress-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 8px;
+  }
+  #race-timeline {
+    flex: 1;
+    height: 3px;
+    background: var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  #race-timeline-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 4px;
+    transition: width .4s ease;
+    width: 0%;
+  }
+  #race-year-label {
+    font-size: 12px;
+    color: var(--muted);
+    min-width: 36px;
+    text-align: right;
+  }
+</style>
+</head>
+<body>
+
+<div id="deck">
+
+  <!-- ══════════════════════════════════════════════
+       SLIDE 1 — COVER
+       Replace: presentation title, subtitle, author, date
+  ══════════════════════════════════════════════ -->
+  <div class="slide cover active" id="s1">
+    <div class="slide-tag">Data Presentation · 2026</div>
+    <div class="slide-title">Your Presentation<br>Title Goes Here</div>
+    <div class="slide-sub">
+      A concise description of what this data story is about.<br>
+      Replace this with your research question or dataset summary.
+    </div>
+    <div class="cover-meta">
+      <span><span class="dot" style="background:var(--accent)"></span>Author Name</span>
+      <span><span class="dot" style="background:var(--accent3)"></span>Dataset: Your Dataset Name</span>
+      <span><span class="dot" style="background:var(--accent2)"></span>May 2026</span>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════
+       SLIDE 2 — KEY STATS (no chart — summary numbers)
+       Replace: the 3 stat values and labels
+  ══════════════════════════════════════════════ -->
+  <div class="slide" id="s2">
+    <div class="slide-tag">Overview</div>
+    <div class="slide-title">Key Figures at a Glance</div>
+    <div class="slide-sub">Replace these with the headline numbers from your dataset.</div>
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-val" style="color:var(--accent)">1,284</div><!-- ← YOUR VALUE -->
+        <div class="stat-label">Total observations</div><!-- ← YOUR LABEL -->
+      </div>
+      <div class="stat-card">
+        <div class="stat-val" style="color:var(--accent3)">73.4%</div><!-- ← YOUR VALUE -->
+        <div class="stat-label">Key metric label</div><!-- ← YOUR LABEL -->
+      </div>
+      <div class="stat-card">
+        <div class="stat-val" style="color:var(--accent4)">R² = 0.87</div><!-- ← YOUR VALUE -->
+        <div class="stat-label">Model fit / accuracy</div><!-- ← YOUR LABEL -->
+      </div>
+    </div>
+    <div class="data-note">
+      <strong>How to update:</strong> Edit the <code>stat-val</code> divs above with your R output values.
+      Export from R with: <code>summary(your_data)</code> or <code>nrow(df)</code>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════
+       SLIDE 3 — BAR CHART 1
+       Replace: labels array, data array, title, subtitle
+  ══════════════════════════════════════════════ -->
+  <div class="slide" id="s3">
+    <div class="slide-tag">Chart 1 · Bar</div>
+    <div class="slide-title">Category Comparison</div><!-- ← YOUR TITLE -->
+    <div class="slide-sub">Replace with your axis description and what the bars represent.</div>
+    <div class="chart-wrap"><canvas id="chart3"></canvas></div>
+    <div class="data-note">
+      <strong>R export:</strong> <code>write.csv(your_df, "data.csv")</code> then paste values into the
+      <code>labels</code> and <code>data</code> arrays in the script below.
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════
+       SLIDE 4 — HORIZONTAL BAR CHART
+       Replace: labels, data, title
+  ══════════════════════════════════════════════ -->
+  <div class="slide" id="s4">
+    <div class="slide-tag">Chart 2 · Horizontal Bar</div>
+    <div class="slide-title">Ranked Comparison</div><!-- ← YOUR TITLE -->
+    <div class="slide-sub">Useful for ranking categories — longest bar = highest value.</div>
+    <div class="chart-wrap"><canvas id="chart4"></canvas></div>
+    <div class="data-note">
+      <strong>R tip:</strong> <code>df %&gt;% arrange(desc(value)) %&gt;% pull(category)</code> to get ranked order.
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════
+       SLIDE 5 — PIE / DONUT CHART
+       Replace: labels, data, title
+  ══════════════════════════════════════════════ -->
+  <div class="slide" id="s5">
+    <div class="slide-tag">Chart 3 · Donut</div>
+    <div class="slide-title">Composition Breakdown</div><!-- ← YOUR TITLE -->
+    <div class="slide-sub">Shows how a total is split across categories.</div>
+    <div class="two-col">
+      <div class="chart-wrap"><canvas id="chart5"></canvas></div>
+      <div style="display:flex;flex-direction:column;justify-content:center;gap:10px;" id="pie-legend"></div>
+    </div>
+    <div class="data-note">
+      <strong>R tip:</strong> <code>prop.table(table(df$category)) * 100</code> gives percentages to paste here.
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════
+       SLIDE 6 — GROUPED BAR CHART
+       Replace: labels, datasets (2 groups), title
+  ══════════════════════════════════════════════ -->
+  <div class="slide" id="s6">
+    <div class="slide-tag">Chart 4 · Grouped Bar</div>
+    <div class="slide-title">Two-Group Comparison</div><!-- ← YOUR TITLE -->
+    <div class="slide-sub">Compare two variables side by side across categories.</div>
+    <div class="chart-wrap"><canvas id="chart6"></canvas></div>
+    <div class="data-note">
+      <strong>R tip:</strong> <code>pivot_wider(df, names_from=group, values_from=value)</code> then paste each column as a dataset below.
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════
+       SLIDE 7 — SCATTER PLOT
+       Replace: data points array {x, y}, title
+  ══════════════════════════════════════════════ -->
+  <div class="slide" id="s7">
+    <div class="slide-tag">Chart 5 · Scatter</div>
+    <div class="slide-title">Correlation Explorer</div><!-- ← YOUR TITLE -->
+    <div class="slide-sub">Each dot is one observation. Hover to see values. Replace X and Y axis labels.</div>
+    <div class="chart-wrap"><canvas id="chart7"></canvas></div>
+    <div class="data-note">
+      <strong>R export:</strong> <code>df %&gt;% select(x_var, y_var) %&gt;% write.csv("scatter.csv")</code>
+      then paste as <code>{x: val, y: val}</code> pairs in the data array below.
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════
+       SLIDE 8 — BUBBLE CHART
+       Replace: data points {x, y, r}, title, axis labels
+       r = bubble radius (scale to your data — try value/10)
+  ══════════════════════════════════════════════ -->
+  <div class="slide" id="s8">
+    <div class="slide-tag">Chart 6 · Bubble</div>
+    <div class="slide-title">Three-Variable View</div><!-- ← YOUR TITLE -->
+    <div class="slide-sub">X axis · Y axis · Bubble size = third variable. Hover for values.</div>
+    <div class="chart-wrap"><canvas id="chart8"></canvas></div>
+    <div class="data-note">
+      <strong>R tip:</strong> <code>r</code> is the bubble radius. Scale with <code>sqrt(your_size_var) / 2</code>
+      so large values don't dominate. Each point: <code>{x: xval, y: yval, r: rval}</code>.
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════
+       SLIDE 9 — STACKED BAR
+       Replace: labels, 3 dataset groups, title
+  ══════════════════════════════════════════════ -->
+  <div class="slide" id="s9">
+    <div class="slide-tag">Chart 7 · Stacked Bar</div>
+    <div class="slide-title">Part-to-Whole Over Categories</div><!-- ← YOUR TITLE -->
+    <div class="slide-sub">Shows how sub-groups contribute to each category total.</div>
+    <div class="chart-wrap"><canvas id="chart9"></canvas></div>
+    <div class="data-note">
+      <strong>R tip:</strong> <code>pivot_wider(df, names_from=subgroup, values_from=value)</code>
+      gives you the columns to paste as datasets below.
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════
+       SLIDE 10 — ANIMATED BAR CHART RACE
+       ↓↓ Edit RACE_DATA below in the script to use your values ↓↓
+       Each year entry has { label, value } for every category.
+  ══════════════════════════════════════════════ -->
+  <div class="slide" id="s10">
+    <div class="slide-tag">Chart 8 · Bar Race</div>
+    <div class="slide-title">Rankings Over Time</div><!-- ← YOUR TITLE -->
+    <div class="slide-sub">Watch categories rise and fall — bars race and reorder each year.</div>
+    <div id="race-wrap">
+      <div id="race-rows"></div>
+      <div id="race-year-display">2015</div>
+    </div>
+    <div id="race-controls">
+      <button class="race-btn" id="race-play-btn">▶ Play</button>
+      <button class="race-btn" id="race-restart-btn">↺ Restart</button>
+      <div id="race-progress-row" style="flex:1;display:flex;align-items:center;gap:10px;">
+        <div id="race-timeline"><div id="race-timeline-fill"></div></div>
+        <span id="race-year-label">2015</span>
+      </div>
+      <div id="race-speed">
+        Speed:
+        <select id="race-speed-select">
+          <option value="1200">Slow</option>
+          <option value="800" selected>Normal</option>
+          <option value="400">Fast</option>
+        </select>
+      </div>
+    </div>
+    <div class="data-note" style="margin-top:10px;">
+      <strong>R tip:</strong> Export with <code>df %&gt;% group_by(year, category) %&gt;% summarise(value=sum(val))</code>
+      then paste into the <code>RACE_DATA</code> array in the script. Each year needs all categories.
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════
+       SLIDE 11 — CLOSING / CONCLUSIONS
+       Replace: bullet points with your key findings
+  ══════════════════════════════════════════════ -->
+  <div class="slide" id="s11">
+    <div class="slide-tag">Summary</div>
+    <div class="slide-title">Key Findings & Next Steps</div>
+    <div class="slide-sub">Replace the points below with your conclusions.</div>
+    <div style="display:flex;flex-direction:column;gap:14px;flex:1;justify-content:center;">
+      <div style="display:flex;gap:14px;align-items:flex-start;">
+        <div style="width:32px;height:32px;border-radius:8px;background:rgba(124,109,240,.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px;color:var(--accent);font-weight:600;">1</div>
+        <div>
+          <div style="font-size:15px;font-weight:500;margin-bottom:3px;">Finding one headline</div><!-- ← YOUR FINDING -->
+          <div style="font-size:13px;color:var(--muted);">Supporting detail from your analysis. Replace this text.</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:14px;align-items:flex-start;">
+        <div style="width:32px;height:32px;border-radius:8px;background:rgba(62,207,170,.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px;color:var(--accent3);font-weight:600;">2</div>
+        <div>
+          <div style="font-size:15px;font-weight:500;margin-bottom:3px;">Finding two headline</div><!-- ← YOUR FINDING -->
+          <div style="font-size:13px;color:var(--muted);">Supporting detail from your analysis. Replace this text.</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:14px;align-items:flex-start;">
+        <div style="width:32px;height:32px;border-radius:8px;background:rgba(240,180,41,.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px;color:var(--accent4);font-weight:600;">3</div>
+        <div>
+          <div style="font-size:15px;font-weight:500;margin-bottom:3px;">Recommended next step</div><!-- ← YOUR NEXT STEP -->
+          <div style="font-size:13px;color:var(--muted);">What action or further analysis does this data suggest?</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-top:auto;padding-top:20px;border-top:1px solid var(--border);font-size:12px;color:var(--muted);display:flex;justify-content:space-between;">
+      <span>Author Name · May 2026</span>
+      <span>Built with Chart.js · GitHub Pages</span>
+    </div>
+  </div>
+
+</div><!-- /deck -->
+
+<!-- Navigation -->
+<div id="nav">
+  <button class="nav-btn" id="prevBtn" disabled>← Prev</button>
+  <div id="progress-wrap">
+    <div id="progress-bar-bg"><div id="progress-bar" style="width:10%"></div></div>
+    <span id="slide-count">1 / 10</span>
+  </div>
+  <button class="nav-btn" id="nextBtn">Next →</button>
+</div>
+<div id="hint">Use ← → arrow keys to navigate</div>
+
+<script>
+/* ═══════════════════════════════════════════════
+   CHART.JS DEFAULT STYLES (dark theme)
+═══════════════════════════════════════════════ */
+Chart.defaults.color = '#8b8aA0';
+Chart.defaults.borderColor = '#2a2a38';
+Chart.defaults.font.family = "'DM Sans', sans-serif";
+Chart.defaults.font.size = 12;
+
+const COLORS = {
+  purple: 'rgba(124,109,240,',
+  teal:   'rgba(62,207,170,',
+  coral:  'rgba(232,100,90,',
+  amber:  'rgba(240,180,41,',
+  blue:   'rgba(80,160,240,',
+};
+const solid  = (c) => c + '1)';
+const faded  = (c) => c + '0.15)';
+const border = (c) => c + '0.8)';
+
+/* ═══════════════════════════════════════════════
+   SLIDE 3 — BAR CHART
+   ↓↓ REPLACE labels and data with your R values ↓↓
+═══════════════════════════════════════════════ */
+new Chart(document.getElementById('chart3'), {
+  type: 'bar',
+  data: {
+    labels: ['Category A','Category B','Category C','Category D','Category E','Category F'],
+    // ↓ paste your values here (from R: pull(df, value))
+    datasets: [{
+      label: 'Your Variable Name',  // ← change this
+      data:  [42, 78, 55, 91, 34, 67],  // ← YOUR DATA
+      backgroundColor: [
+        solid(COLORS.purple), solid(COLORS.teal), solid(COLORS.coral),
+        solid(COLORS.amber),  solid(COLORS.blue),  solid(COLORS.purple)
+      ],
+      borderRadius: 6, borderSkipped: false,
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false },
+      tooltip: { callbacks: { label: ctx => ` ${ctx.parsed.y}` } }
+    },
+    scales: {
+      x: { grid: { display: false } },
+      y: { beginAtZero: true, grid: { color: '#2a2a38' } }
+    }
+  }
+});
+
+/* ═══════════════════════════════════════════════
+   SLIDE 4 — HORIZONTAL BAR
+   ↓↓ REPLACE labels and data ↓↓
+═══════════════════════════════════════════════ */
+new Chart(document.getElementById('chart4'), {
+  type: 'bar',
+  data: {
+    labels: ['Item One','Item Two','Item Three','Item Four','Item Five'],  // ← YOUR LABELS
+    datasets: [{
+      label: 'Your Metric',  // ← change this
+      data: [85, 72, 64, 51, 38],  // ← YOUR DATA (sorted desc from R)
+      backgroundColor: solid(COLORS.teal),
+      borderRadius: 5, borderSkipped: false,
+    }]
+  },
+  options: {
+    indexAxis: 'y',
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { beginAtZero: true, grid: { color: '#2a2a38' } },
+      y: { grid: { display: false } }
+    }
+  }
+});
+
+/* ═══════════════════════════════════════════════
+   SLIDE 5 — DONUT CHART
+   ↓↓ REPLACE labels and data ↓↓
+═══════════════════════════════════════════════ */
+const pieLabels = ['Group Alpha','Group Beta','Group Gamma','Group Delta'];  // ← YOUR LABELS
+const pieData   = [38, 27, 21, 14];  // ← YOUR DATA (percentages or counts)
+const pieColors = [
+  solid(COLORS.purple), solid(COLORS.teal),
+  solid(COLORS.coral),  solid(COLORS.amber)
+];
+
+new Chart(document.getElementById('chart5'), {
+  type: 'doughnut',
+  data: { labels: pieLabels, datasets: [{ data: pieData, backgroundColor: pieColors, borderWidth: 0, hoverOffset: 8 }] },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    cutout: '68%',
+    plugins: {
+      legend: { display: false },
+      tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.parsed}` } }
+    }
+  }
+});
+
+// Build legend manually
+const pieLegend = document.getElementById('pie-legend');
+pieLabels.forEach((l, i) => {
+  pieLegend.innerHTML += `<div class="legend-item">
+    <span class="legend-dot" style="background:${pieColors[i]}"></span>
+    <span>${l} — <strong style="color:#f0eff8">${pieData[i]}</strong></span>
+  </div>`;
+});
+
+/* ═══════════════════════════════════════════════
+   SLIDE 6 — GROUPED BAR
+   ↓↓ REPLACE labels, group names, and both data arrays ↓↓
+═══════════════════════════════════════════════ */
+new Chart(document.getElementById('chart6'), {
+  type: 'bar',
+  data: {
+    labels: ['Jan','Feb','Mar','Apr','May','Jun'],  // ← YOUR CATEGORIES
+    datasets: [
+      {
+        label: 'Group One',   // ← YOUR GROUP NAME
+        data: [45, 59, 48, 61, 55, 70],  // ← YOUR DATA
+        backgroundColor: solid(COLORS.purple), borderRadius: 5,
+      },
+      {
+        label: 'Group Two',   // ← YOUR GROUP NAME
+        data: [38, 45, 52, 44, 49, 58],  // ← YOUR DATA
+        backgroundColor: solid(COLORS.teal), borderRadius: 5,
+      }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { labels: { color: '#8b8aA0', boxWidth: 12 } } },
+    scales: {
+      x: { grid: { display: false } },
+      y: { beginAtZero: true, grid: { color: '#2a2a38' } }
+    }
+  }
+});
+
+/* ═══════════════════════════════════════════════
+   SLIDE 7 — SCATTER PLOT
+   ↓↓ REPLACE data points {x, y} and axis labels ↓↓
+   R export: data.frame(x=df$var1, y=df$var2)
+═══════════════════════════════════════════════ */
+new Chart(document.getElementById('chart7'), {
+  type: 'scatter',
+  data: {
+    datasets: [{
+      label: 'Observations',  // ← change
+      data: [  // ← YOUR {x, y} PAIRS from R
+        {x:12,y:34},{x:19,y:52},{x:25,y:41},{x:31,y:67},{x:38,y:55},
+        {x:42,y:78},{x:48,y:62},{x:55,y:88},{x:61,y:74},{x:67,y:91},
+        {x:72,y:83},{x:78,y:95},{x:84,y:79},{x:90,y:102},{x:95,y:98},
+      ],
+      backgroundColor: solid(COLORS.coral),
+      pointRadius: 7, pointHoverRadius: 9,
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false },
+      tooltip: { callbacks: { label: ctx => ` x: ${ctx.parsed.x}  y: ${ctx.parsed.y}` } }
+    },
+    scales: {
+      x: { title: { display: true, text: 'X Variable Name', color:'#8b8aA0' }, grid: { color: '#2a2a38' } },  // ← YOUR AXIS LABEL
+      y: { title: { display: true, text: 'Y Variable Name', color:'#8b8aA0' }, grid: { color: '#2a2a38' } }   // ← YOUR AXIS LABEL
+    }
+  }
+});
+
+/* ═══════════════════════════════════════════════
+   SLIDE 8 — BUBBLE CHART
+   ↓↓ REPLACE data points {x, y, r} ↓↓
+   r = visual radius in px (scale: sqrt(your_value)/2)
+   R: mutate(df, r = sqrt(size_var)/2)
+═══════════════════════════════════════════════ */
+new Chart(document.getElementById('chart8'), {
+  type: 'bubble',
+  data: {
+    datasets: [
+      {
+        label: 'Group A',  // ← YOUR GROUP
+        data: [  // ← YOUR {x, y, r} TRIPLES
+          {x:20,y:35,r:12},{x:35,y:55,r:18},{x:50,y:42,r:9},
+          {x:65,y:70,r:22},{x:80,y:58,r:14},
+        ],
+        backgroundColor: 'rgba(124,109,240,0.3)',
+        borderColor: solid(COLORS.purple), borderWidth: 1.5,
+      },
+      {
+        label: 'Group B',  // ← YOUR GROUP
+        data: [
+          {x:25,y:60,r:16},{x:40,y:38,r:10},{x:58,y:80,r:20},
+          {x:72,y:45,r:8}, {x:88,y:72,r:25},
+        ],
+        backgroundColor: 'rgba(62,207,170,0.3)',
+        borderColor: solid(COLORS.teal), borderWidth: 1.5,
+      }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { labels: { color: '#8b8aA0', boxWidth: 12 } },
+      tooltip: { callbacks: { label: ctx => ` x:${ctx.parsed.x}  y:${ctx.parsed.y}  size:${ctx.parsed._custom}` } }
+    },
+    scales: {
+      x: { title: { display: true, text: 'X Variable', color:'#8b8aA0' }, grid: { color: '#2a2a38' } },  // ← YOUR LABEL
+      y: { title: { display: true, text: 'Y Variable', color:'#8b8aA0' }, grid: { color: '#2a2a38' } }   // ← YOUR LABEL
+    }
+  }
+});
+
+/* ═══════════════════════════════════════════════
+   SLIDE 9 — STACKED BAR
+   ↓↓ REPLACE labels and 3 dataset arrays ↓↓
+═══════════════════════════════════════════════ */
+new Chart(document.getElementById('chart9'), {
+  type: 'bar',
+  data: {
+    labels: ['Q1','Q2','Q3','Q4'],  // ← YOUR CATEGORIES
+    datasets: [
+      { label: 'Sub-group A', data: [30,40,35,50], backgroundColor: solid(COLORS.purple), borderRadius: 0 },  // ← YOUR DATA
+      { label: 'Sub-group B', data: [20,25,30,22], backgroundColor: solid(COLORS.teal),   borderRadius: 0 },  // ← YOUR DATA
+      { label: 'Sub-group C', data: [15,18,20,28], backgroundColor: solid(COLORS.coral),  borderRadius: 0 },  // ← YOUR DATA
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { labels: { color: '#8b8aA0', boxWidth: 12 } } },
+    scales: {
+      x: { stacked: true, grid: { display: false } },
+      y: { stacked: true, grid: { color: '#2a2a38' } }
+    }
+  }
+});
+
+/* ═══════════════════════════════════════════════
+   SLIDE 10 — BAR CHART RACE
+   ↓↓ REPLACE RACE_DATA with your own values ↓↓
+
+   Format: one entry per year.
+   Each entry: { year, items: [ {label, value}, … ] }
+   Include ALL categories in every year (use 0 if missing).
+   R export hint:
+     df %>% group_by(year, category) %>%
+       summarise(value = sum(metric)) %>%
+       arrange(year, desc(value))
+═══════════════════════════════════════════════ */
+const RACE_DATA = [
+  { year: 2015, items: [
+    { label: 'Category A', value: 120 },
+    { label: 'Category B', value: 95  },
+    { label: 'Category C', value: 80  },
+    { label: 'Category D', value: 60  },
+    { label: 'Category E', value: 45  },
+    { label: 'Category F', value: 30  },
+    { label: 'Category G', value: 20  },
+  ]},
+  { year: 2016, items: [
+    { label: 'Category A', value: 135 },
+    { label: 'Category B', value: 110 },
+    { label: 'Category C', value: 72  },
+    { label: 'Category D', value: 88  },
+    { label: 'Category E', value: 55  },
+    { label: 'Category F', value: 48  },
+    { label: 'Category G', value: 35  },
+  ]},
+  { year: 2017, items: [
+    { label: 'Category A', value: 142 },
+    { label: 'Category B', value: 128 },
+    { label: 'Category C', value: 65  },
+    { label: 'Category D', value: 115 },
+    { label: 'Category E', value: 70  },
+    { label: 'Category F', value: 62  },
+    { label: 'Category G', value: 50  },
+  ]},
+  { year: 2018, items: [
+    { label: 'Category A', value: 150 },
+    { label: 'Category B', value: 140 },
+    { label: 'Category C', value: 58  },
+    { label: 'Category D', value: 145 },
+    { label: 'Category E', value: 90  },
+    { label: 'Category F', value: 75  },
+    { label: 'Category G', value: 68  },
+  ]},
+  { year: 2019, items: [
+    { label: 'Category A', value: 155 },
+    { label: 'Category B', value: 160 },
+    { label: 'Category C', value: 52  },
+    { label: 'Category D', value: 170 },
+    { label: 'Category E', value: 112 },
+    { label: 'Category F', value: 88  },
+    { label: 'Category G', value: 85  },
+  ]},
+  { year: 2020, items: [
+    { label: 'Category A', value: 148 },
+    { label: 'Category B', value: 175 },
+    { label: 'Category C', value: 48  },
+    { label: 'Category D', value: 195 },
+    { label: 'Category E', value: 130 },
+    { label: 'Category F', value: 100 },
+    { label: 'Category G', value: 110 },
+  ]},
+  { year: 2021, items: [
+    { label: 'Category A', value: 160 },
+    { label: 'Category B', value: 185 },
+    { label: 'Category C', value: 55  },
+    { label: 'Category D', value: 210 },
+    { label: 'Category E', value: 155 },
+    { label: 'Category F', value: 118 },
+    { label: 'Category G', value: 138 },
+  ]},
+  { year: 2022, items: [
+    { label: 'Category A', value: 172 },
+    { label: 'Category B', value: 200 },
+    { label: 'Category C', value: 62  },
+    { label: 'Category D', value: 225 },
+    { label: 'Category E', value: 178 },
+    { label: 'Category F', value: 132 },
+    { label: 'Category G', value: 165 },
+  ]},
+  { year: 2023, items: [
+    { label: 'Category A', value: 185 },
+    { label: 'Category B', value: 218 },
+    { label: 'Category C', value: 70  },
+    { label: 'Category D', value: 238 },
+    { label: 'Category E', value: 200 },
+    { label: 'Category F', value: 148 },
+    { label: 'Category G', value: 192 },
+  ]},
+  { year: 2024, items: [
+    { label: 'Category A', value: 198 },
+    { label: 'Category B', value: 232 },
+    { label: 'Category C', value: 78  },
+    { label: 'Category D', value: 245 },
+    { label: 'Category E', value: 225 },
+    { label: 'Category F', value: 162 },
+    { label: 'Category G', value: 220 },
+  ]},
+];
+
+// Assign a fixed colour per label so bars keep their colour as they reorder
+const ALL_LABELS = [...new Set(RACE_DATA.flatMap(d => d.items.map(i => i.label)))];
+const RACE_PALETTE = [
+  '#7c6df0','#3ecfaa','#e8645a','#f0b429','#50a0f0',
+  '#c084fc','#34d399','#fb923c','#60a5fa','#f472b6'
+];
+const labelColor = {};
+ALL_LABELS.forEach((l, i) => labelColor[l] = RACE_PALETTE[i % RACE_PALETTE.length]);
+
+const TOP_N      = 7;  // how many bars to show at once
+const raceWrap   = document.getElementById('race-rows');
+const yearDisp   = document.getElementById('race-year-display');
+const yearLabel  = document.getElementById('race-year-label');
+const timelineFill = document.getElementById('race-timeline-fill');
+const playBtn    = document.getElementById('race-play-btn');
+const restartBtn = document.getElementById('race-restart-btn');
+const speedSel   = document.getElementById('race-speed-select');
+
+let raceFrame = 0;
+let raceTimer = null;
+let racePlaying = false;
+
+function raceInterval() { return parseInt(speedSel.value); }
+
+// Build DOM rows once
+function buildRaceRows() {
+  raceWrap.innerHTML = '';
+  for (let i = 0; i < TOP_N; i++) {
+    const row = document.createElement('div');
+    row.className = 'race-row';
+    row.innerHTML = `
+      <div class="race-label" id="rl${i}">—</div>
+      <div class="race-bar-bg"><div class="race-bar" id="rb${i}" style="width:0%"></div></div>
+      <div class="race-val" id="rv${i}">0</div>`;
+    raceWrap.appendChild(row);
+  }
+}
+
+function renderRaceFrame(frameIdx) {
+  const frame = RACE_DATA[frameIdx];
+  const sorted = [...frame.items].sort((a, b) => b.value - a.value).slice(0, TOP_N);
+  const maxVal = sorted[0]?.value || 1;
+
+  sorted.forEach((item, i) => {
+    const pct = Math.round((item.value / maxVal) * 100);
+    document.getElementById(`rl${i}`).textContent = item.label;
+    document.getElementById(`rl${i}`).className = 'race-label' + (i === 0 ? ' top' : '');
+    document.getElementById(`rb${i}`).style.width = pct + '%';
+    document.getElementById(`rb${i}`).style.background = labelColor[item.label] || '#7c6df0';
+    document.getElementById(`rv${i}`).textContent = item.value.toLocaleString();
+    document.getElementById(`rv${i}`).style.color = labelColor[item.label] || '#7c6df0';
+  });
+
+  yearDisp.textContent = frame.year;
+  yearLabel.textContent = frame.year;
+  const progress = Math.round((frameIdx / (RACE_DATA.length - 1)) * 100);
+  timelineFill.style.width = progress + '%';
+}
+
+function raceStep() {
+  raceFrame++;
+  if (raceFrame >= RACE_DATA.length) {
+    raceFrame = RACE_DATA.length - 1;
+    stopRace();
+    playBtn.textContent = '▶ Play';
+    return;
+  }
+  renderRaceFrame(raceFrame);
+}
+
+function startRace() {
+  if (raceFrame >= RACE_DATA.length - 1) raceFrame = 0;
+  racePlaying = true;
+  playBtn.textContent = '⏸ Pause';
+  raceTimer = setInterval(raceStep, raceInterval());
+}
+
+function stopRace() {
+  racePlaying = false;
+  clearInterval(raceTimer);
+  raceTimer = null;
+  playBtn.textContent = '▶ Play';
+}
+
+playBtn.addEventListener('click', () => {
+  if (racePlaying) stopRace();
+  else startRace();
+});
+
+restartBtn.addEventListener('click', () => {
+  stopRace();
+  raceFrame = 0;
+  renderRaceFrame(0);
+});
+
+speedSel.addEventListener('change', () => {
+  if (racePlaying) { stopRace(); startRace(); }
+});
+
+// Initialise race on page load
+buildRaceRows();
+renderRaceFrame(0);
+
+/* ═══════════════════════════════════════════════
+   NAVIGATION LOGIC — updated for 11 slides + race pause
+═══════════════════════════════════════════════ */
+const slides = document.querySelectorAll('.slide');
+const total  = slides.length;
+let current  = 0;
+
+const RACE_SLIDE_INDEX = 9; // 0-based index of the race slide (slide 10)
+
+function goTo(n) {
+  // Pause race if leaving race slide
+  if (current === RACE_SLIDE_INDEX && n !== RACE_SLIDE_INDEX) stopRace();
+  slides[current].classList.remove('active');
+  current = Math.max(0, Math.min(n, total - 1));
+  slides[current].classList.add('active');
+  document.getElementById('prevBtn').disabled = current === 0;
+  document.getElementById('nextBtn').disabled = current === total - 1;
+  document.getElementById('slide-count').textContent = `${current + 1} / ${total}`;
+  document.getElementById('progress-bar').style.width = `${((current + 1) / total) * 100}%`;
+}
+
+document.getElementById('prevBtn').addEventListener('click', () => goTo(current - 1));
+document.getElementById('nextBtn').addEventListener('click', () => goTo(current + 1));
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') goTo(current + 1);
+  if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   goTo(current - 1);
+});
+</script>
+</body>
+</html>
