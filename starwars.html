@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Star Wars Character Explorer</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700&family=Exo+2:wght@300;400;500&display=swap');
+
+:root {
+  --bg: #06060f;
+  --surface: #0d0d1a;
+  --card: #111122;
+  --border: #1e1e3a;
+  --accent: #ffe81a;
+  --accent2: #4fc3f7;
+  --accent3: #ef5350;
+  --text: #e8e8f0;
+  --muted: #5a5a7a;
+  --selected-bg: rgba(255,232,26,0.08);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Exo 2', sans-serif;
+  min-height: 100vh;
+  padding: 0;
+}
+
+/* ── HEADER ── */
+header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--accent);
+  padding: 18px 32px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+header h1 {
+  font-family: 'Orbitron', monospace;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: 0.08em;
+}
+header p {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+.lightsaber {
+  width: 4px;
+  height: 36px;
+  background: var(--accent);
+  border-radius: 2px;
+  box-shadow: 0 0 10px var(--accent), 0 0 20px rgba(255,232,26,0.4);
+}
+
+/* ── LAYOUT ── */
+.layout {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 0;
+  height: calc(100vh - 73px);
+  overflow: hidden;
+}
+
+/* ── SIDEBAR ── */
+.sidebar {
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.sidebar-head {
+  padding: 16px 18px 12px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.sidebar-head h2 {
+  font-family: 'Orbitron', monospace;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  color: var(--accent2);
+  text-transform: uppercase;
+}
+.search-box {
+  margin-top: 10px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-family: 'Exo 2', sans-serif;
+  font-size: 12px;
+  color: var(--text);
+  width: 100%;
+  outline: none;
+  transition: border-color .2s;
+}
+.search-box::placeholder { color: var(--muted); }
+.search-box:focus { border-color: var(--accent); }
+
+.char-list {
+  overflow-y: auto;
+  flex: 1;
+  padding: 8px 0;
+}
+.char-list::-webkit-scrollbar { width: 4px; }
+.char-list::-webkit-scrollbar-track { background: transparent; }
+.char-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+.char-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 18px;
+  cursor: pointer;
+  transition: background .15s;
+  border-left: 3px solid transparent;
+}
+.char-item:hover { background: rgba(255,255,255,.03); }
+.char-item.selected {
+  background: var(--selected-bg);
+  border-left-color: var(--accent);
+}
+.char-item input[type=radio] { display: none; }
+.char-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  flex-shrink: 0;
+  font-family: 'Orbitron', monospace;
+}
+.char-name {
+  font-size: 13px;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.char-species {
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: 1px;
+}
+
+/* ── MAIN PANEL ── */
+.main {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 24px 28px;
+  gap: 20px;
+}
+
+/* ── CHARACTER INFO CARD ── */
+.char-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 22px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-shrink: 0;
+}
+.char-card-avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 700;
+  font-family: 'Orbitron', monospace;
+  flex-shrink: 0;
+  border: 2px solid;
+}
+.char-card-name {
+  font-family: 'Orbitron', monospace;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--accent);
+  margin-bottom: 4px;
+}
+.char-card-meta {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+.meta-item { font-size: 12px; color: var(--muted); }
+.meta-item span { color: var(--text); font-weight: 500; margin-left: 4px; }
+.char-card-stats {
+  margin-left: auto;
+  display: flex;
+  gap: 16px;
+}
+.big-stat { text-align: center; }
+.big-stat-val {
+  font-family: 'Orbitron', monospace;
+  font-size: 22px;
+  font-weight: 700;
+}
+.big-stat-label { font-size: 10px; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; margin-top: 2px; }
+
+/* ── CHARTS ROW ── */
+.charts-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  flex: 1;
+  min-height: 0;
+}
+.chart-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.chart-title {
+  font-family: 'Orbitron', monospace;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.chart-subtitle {
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 14px;
+}
+.chart-wrap {
+  flex: 1;
+  position: relative;
+  min-height: 0;
+}
+
+/* ── NO DATA STATE ── */
+.no-data {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  font-family: 'Orbitron', monospace;
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 0.08em;
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="lightsaber"></div>
+  <div>
+    <h1>Star Wars · Character Explorer</h1>
+    <p>Select a character to compare height &amp; mass against the rest of the galaxy</p>
+  </div>
+</header>
+
+<div class="layout">
+
+  <!-- ── SIDEBAR ── -->
+  <div class="sidebar">
+    <div class="sidebar-head">
+      <h2>Select Character</h2>
+      <input class="search-box" id="search" type="text" placeholder="Search characters…">
+    </div>
+    <div class="char-list" id="char-list"></div>
+  </div>
+
+  <!-- ── MAIN ── -->
+  <div class="main">
+
+    <!-- Info card -->
+    <div class="char-card" id="char-card">
+      <div class="char-card-avatar" id="card-avatar" style="border-color:var(--accent);background:rgba(255,232,26,0.1);color:var(--accent);">?</div>
+      <div>
+        <div class="char-card-name" id="card-name">Select a character</div>
+        <div class="char-card-meta" id="card-meta">
+          <div class="meta-item">Choose from the list on the left to begin</div>
+        </div>
+      </div>
+      <div class="char-card-stats" id="card-stats"></div>
+    </div>
+
+    <!-- Two charts side by side -->
+    <div class="charts-row">
+      <div class="chart-card">
+        <div class="chart-title" style="color:#4fc3f7;">Height Comparison</div>
+        <div class="chart-subtitle">cm · selected character highlighted in blue</div>
+        <div class="chart-wrap"><canvas id="heightChart"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title" style="color:#ef5350;">Mass Comparison</div>
+        <div class="chart-subtitle">kg · selected character highlighted in red</div>
+        <div class="chart-wrap"><canvas id="massChart"></canvas></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+/* ════════════════════════════════════════════════
+   STAR WARS DATA  (from dplyr::starwars, R)
+   NA values replaced with null
+════════════════════════════════════════════════ */
+const SW = [
+  {name:"Luke Skywalker",    height:172, mass:77,   hair:"blond",       skin:"fair",         eye:"blue",    birth:19,   gender:"masculine", species:"Human",         homeworld:"Tatooine"},
+  {name:"C-3PO",             height:167, mass:75,   hair:"none",        skin:"gold",         eye:"yellow",  birth:112,  gender:"masculine", species:"Droid",         homeworld:"Tatooine"},
+  {name:"R2-D2",             height:96,  mass:32,   hair:"none",        skin:"white, blue",  eye:"red",     birth:33,   gender:"masculine", species:"Droid",         homeworld:"Naboo"},
+  {name:"Darth Vader",       height:202, mass:136,  hair:"none",        skin:"white",        eye:"yellow",  birth:41.9, gender:"masculine", species:"Human",         homeworld:"Tatooine"},
+  {name:"Leia Organa",       height:150, mass:49,   hair:"brown",       skin:"light",        eye:"brown",   birth:19,   gender:"feminine",  species:"Human",         homeworld:"Alderaan"},
+  {name:"Owen Lars",         height:178, mass:120,  hair:"brown, grey", skin:"light",        eye:"blue",    birth:52,   gender:"masculine", species:"Human",         homeworld:"Tatooine"},
+  {name:"Beru Whitesun Lars",height:165, mass:75,   hair:"brown",       skin:"light",        eye:"blue",    birth:47,   gender:"feminine",  species:"Human",         homeworld:"Tatooine"},
+  {name:"R5-D4",             height:97,  mass:32,   hair:"none",        skin:"white, red",   eye:"red",     birth:null, gender:"masculine", species:"Droid",         homeworld:"Tatooine"},
+  {name:"Biggs Darklighter", height:183, mass:84,   hair:"black",       skin:"light",        eye:"brown",   birth:24,   gender:"masculine", species:"Human",         homeworld:"Tatooine"},
+  {name:"Obi-Wan Kenobi",    height:182, mass:77,   hair:"auburn, grey",skin:"fair",         eye:"blue-gray",birth:57, gender:"masculine", species:"Human",         homeworld:"Stewjon"},
+  {name:"Anakin Skywalker",  height:188, mass:84,   hair:"blond",       skin:"fair",         eye:"blue",    birth:41.9, gender:"masculine", species:"Human",         homeworld:"Tatooine"},
+  {name:"Wilhuff Tarkin",    height:180, mass:null, hair:"auburn, grey",skin:"fair",         eye:"blue",    birth:64,   gender:"masculine", species:"Human",         homeworld:"Eriadu"},
+  {name:"Chewbacca",         height:228, mass:112,  hair:"brown",       skin:"unknown",      eye:"blue",    birth:200,  gender:"masculine", species:"Wookiee",       homeworld:"Kashyyyk"},
+  {name:"Han Solo",          height:180, mass:80,   hair:"brown",       skin:"fair",         eye:"brown",   birth:29,   gender:"masculine", species:"Human",         homeworld:"Corellia"},
+  {name:"Greedo",            height:173, mass:74,   hair:"none",        skin:"green",        eye:"black",   birth:44,   gender:"masculine", species:"Rodian",        homeworld:"Rodia"},
+  {name:"Jabba Desilijic Tiure",height:175,mass:1358,hair:"none",       skin:"green-tan",    eye:"orange",  birth:600,  gender:"masculine", species:"Hutt",          homeworld:"Nal Hutta"},
+  {name:"Wedge Antilles",    height:170, mass:77,   hair:"brown",       skin:"fair",         eye:"hazel",   birth:21,   gender:"masculine", species:"Human",         homeworld:"Corellia"},
+  {name:"Jek Tono Porkins",  height:180, mass:110,  hair:"brown",       skin:"fair",         eye:"blue",    birth:null, gender:"masculine", species:"Human",         homeworld:"Bestine IV"},
+  {name:"Yoda",              height:66,  mass:17,   hair:"white",       skin:"green",        eye:"brown",   birth:896,  gender:"masculine", species:"Yoda's species", homeworld:"unknown"},
+  {name:"Palpatine",         height:170, mass:75,   hair:"grey",        skin:"pale",         eye:"yellow",  birth:82,   gender:"masculine", species:"Human",         homeworld:"Naboo"},
+  {name:"Boba Fett",         height:183, mass:78.2, hair:"black",       skin:"fair",         eye:"brown",   birth:31.5, gender:"masculine", species:"Human",         homeworld:"Kamino"},
+  {name:"IG-88",             height:200, mass:140,  hair:"none",        skin:"metal",        eye:"red",     birth:15,   gender:"masculine", species:"Droid",         homeworld:"unknown"},
+  {name:"Bossk",             height:190, mass:113,  hair:"none",        skin:"green",        eye:"red",     birth:53,   gender:"masculine", species:"Trandoshan",    homeworld:"Trandosha"},
+  {name:"Lando Calrissian",  height:177, mass:79,   hair:"black",       skin:"dark",         eye:"brown",   birth:31,   gender:"masculine", species:"Human",         homeworld:"Socorro"},
+  {name:"Lobot",             height:175, mass:79,   hair:"none",        skin:"light",        eye:"blue",    birth:37,   gender:"masculine", species:"Human",         homeworld:"Bespin"},
+  {name:"Ackbar",            height:180, mass:83,   hair:"none",        skin:"brown mottle", eye:"orange",  birth:41,   gender:"masculine", species:"Mon Calamari",  homeworld:"Mon Cala"},
+  {name:"Mon Mothma",        height:150, mass:null, hair:"auburn",      skin:"fair",         eye:"blue",    birth:48,   gender:"feminine",  species:"Human",         homeworld:"Chandrila"},
+  {name:"Arvel Crynyd",      height:null,mass:null, hair:"brown",       skin:"fair",         eye:"brown",   birth:null, gender:"masculine", species:"Human",         homeworld:"unknown"},
+  {name:"Wicket Systri Warrick",height:88,mass:20,  hair:"brown",       skin:"brown",        eye:"brown",   birth:8,    gender:"masculine", species:"Ewok",          homeworld:"Endor"},
+  {name:"Nien Nunb",         height:160, mass:68,   hair:"none",        skin:"grey",         eye:"black",   birth:null, gender:"masculine", species:"Sullustan",     homeworld:"Sullust"},
+  {name:"Qui-Gon Jinn",      height:193, mass:89,   hair:"brown",       skin:"fair",         eye:"blue",    birth:92,   gender:"masculine", species:"Human",         homeworld:"unknown"},
+  {name:"Nute Gunray",       height:191, mass:90,   hair:"none",        skin:"mottled green",eye:"red",     birth:null, gender:"masculine", species:"Neimodian",     homeworld:"Cato Neimoidia"},
+  {name:"Finis Valorum",     height:170, mass:null, hair:"blond",       skin:"fair",         eye:"blue",    birth:91,   gender:"masculine", species:"Human",         homeworld:"Coruscant"},
+  {name:"Padmé Amidala",     height:165, mass:45,   hair:"brown",       skin:"light",        eye:"brown",   birth:46,   gender:"feminine",  species:"Human",         homeworld:"Naboo"},
+  {name:"Jar Jar Binks",     height:196, mass:66,   hair:"none",        skin:"orange",       eye:"orange",  birth:52,   gender:"masculine", species:"Gungan",        homeworld:"Naboo"},
+  {name:"Roos Tarpals",      height:224, mass:82,   hair:"none",        skin:"grey",         eye:"orange",  birth:null, gender:"masculine", species:"Gungan",        homeworld:"Naboo"},
+  {name:"Rugor Nass",        height:206, mass:null, hair:"none",        skin:"grey",         eye:"orange",  birth:null, gender:"masculine", species:"Gungan",        homeworld:"Naboo"},
+  {name:"Ric Olié",          height:183, mass:null, hair:"brown",       skin:"fair",         eye:"blue",    birth:null, gender:"masculine", species:"Human",         homeworld:"Naboo"},
+  {name:"Watto",             height:137, mass:null, hair:"black",       skin:"blue, grey",   eye:"yellow",  birth:null, gender:"masculine", species:"Toydarian",     homeworld:"Toydaria"},
+  {name:"Sebulba",           height:112, mass:40,   hair:"none",        skin:"grey, red",    eye:"orange",  birth:null, gender:"masculine", species:"Dug",           homeworld:"Malastare"},
+  {name:"Quarsh Panaka",     height:183, mass:null, hair:"black",       skin:"dark",         eye:"brown",   birth:62,   gender:"masculine", species:"Human",         homeworld:"Naboo"},
+  {name:"Shmi Skywalker",    height:163, mass:null, hair:"black",       skin:"fair",         eye:"brown",   birth:72,   gender:"feminine",  species:"Human",         homeworld:"Tatooine"},
+  {name:"Darth Maul",        height:175, mass:80,   hair:"none",        skin:"red",          eye:"yellow",  birth:54,   gender:"masculine", species:"Zabrak",        homeworld:"Dathomir"},
+  {name:"Bib Fortuna",       height:180, mass:null, hair:"none",        skin:"pale",         eye:"pink",    birth:null, gender:"masculine", species:"Twi'lek",       homeworld:"Ryloth"},
+  {name:"Ayla Secura",       height:178, mass:55,   hair:"none",        skin:"blue",         eye:"hazel",   birth:48,   gender:"feminine",  species:"Twi'lek",       homeworld:"Ryloth"},
+  {name:"Ratts Tyerell",     height:79,  mass:15,   hair:"none",        skin:"grey, blue",   eye:"unknown", birth:null, gender:"masculine", species:"Aleena",        homeworld:"Aleen Minor"},
+  {name:"Dud Bolt",          height:94,  mass:45,   hair:"none",        skin:"blue, grey",   eye:"yellow",  birth:null, gender:"masculine", species:"Vulptereen",    homeworld:"Vulpter"},
+  {name:"Gasgano",           height:122, mass:null, hair:"none",        skin:"white, blue",  eye:"black",   birth:null, gender:"masculine", species:"Xexto",         homeworld:"Troiken"},
+  {name:"Ben Quadinaros",    height:163, mass:65,   hair:"none",        skin:"grey, green",  eye:"orange",  birth:null, gender:"masculine", species:"Toong",         homeworld:"Tund"},
+  {name:"Mace Windu",        height:188, mass:84,   hair:"none",        skin:"dark",         eye:"brown",   birth:72,   gender:"masculine", species:"Human",         homeworld:"Haruun Kal"},
+  {name:"Ki-Adi-Mundi",      height:198, mass:82,   hair:"white",       skin:"pale",         eye:"yellow",  birth:92,   gender:"masculine", species:"Cerean",        homeworld:"Cerea"},
+  {name:"Kit Fisto",         height:196, mass:87,   hair:"none",        skin:"green",        eye:"black",   birth:null, gender:"masculine", species:"Nautolan",      homeworld:"Glee Anselm"},
+  {name:"Eeth Koth",         height:171, mass:null, hair:"black",       skin:"brown",        eye:"brown",   birth:null, gender:"masculine", species:"Zabrak",        homeworld:"Iridonia"},
+  {name:"Adi Gallia",        height:184, mass:50,   hair:"none",        skin:"dark",         eye:"blue",    birth:null, gender:"feminine",  species:"Tholothian",    homeworld:"Coruscant"},
+  {name:"Saesee Tiin",       height:188, mass:null, hair:"none",        skin:"pale",         eye:"orange",  birth:null, gender:"masculine", species:"Iktotchi",      homeworld:"Iktotch"},
+  {name:"Yarael Poof",       height:264, mass:null, hair:"none",        skin:"white",        eye:"yellow",  birth:null, gender:"masculine", species:"Quermian",      homeworld:"Quermia"},
+  {name:"Plo Koon",          height:188, mass:80,   hair:"none",        skin:"orange",       eye:"black",   birth:22,   gender:"masculine", species:"Kel Dor",       homeworld:"Dorin"},
+  {name:"Mas Amedda",        height:196, mass:null, hair:"none",        skin:"blue",         eye:"blue",    birth:null, gender:"masculine", species:"Chagrian",      homeworld:"Champala"},
+  {name:"Gregar Typho",      height:185, mass:85,   hair:"black",       skin:"dark",         eye:"brown",   birth:null, gender:"masculine", species:"Human",         homeworld:"Naboo"},
+  {name:"Cordé",             height:157, mass:null, hair:"brown",       skin:"light",        eye:"brown",   birth:null, gender:"feminine",  species:"Human",         homeworld:"Naboo"},
+  {name:"Cliegg Lars",       height:183, mass:null, hair:"brown",       skin:"fair",         eye:"blue",    birth:82,   gender:"masculine", species:"Human",         homeworld:"Tatooine"},
+  {name:"Poggle the Lesser", height:183, mass:80,   hair:"none",        skin:"green",        eye:"yellow",  birth:null, gender:"masculine", species:"Geonosian",     homeworld:"Geonosis"},
+  {name:"Luminara Unduli",   height:170, mass:56.2, hair:"black",       skin:"yellow",       eye:"blue",    birth:58,   gender:"feminine",  species:"Mirialan",      homeworld:"Mirial"},
+  {name:"Barriss Offee",     height:166, mass:50,   hair:"black",       skin:"yellow",       eye:"blue",    birth:40,   gender:"feminine",  species:"Mirialan",      homeworld:"Mirial"},
+  {name:"Dormé",             height:165, mass:null, hair:"brown",       skin:"light",        eye:"brown",   birth:null, gender:"feminine",  species:"Human",         homeworld:"Naboo"},
+  {name:"Dooku",             height:193, mass:80,   hair:"white",       skin:"fair",         eye:"brown",   birth:102,  gender:"masculine", species:"Human",         homeworld:"Serenno"},
+  {name:"Bail Prestor Organa",height:191,mass:null, hair:"black",       skin:"tan",          eye:"brown",   birth:67,   gender:"masculine", species:"Human",         homeworld:"Alderaan"},
+  {name:"Jango Fett",        height:183, mass:79,   hair:"black",       skin:"tan",          eye:"brown",   birth:66,   gender:"masculine", species:"Human",         homeworld:"Concord Dawn"},
+  {name:"Zam Wesell",        height:168, mass:55,   hair:"blonde",      skin:"fair, green",  eye:"yellow",  birth:null, gender:"feminine",  species:"Clawdite",      homeworld:"Zolan"},
+  {name:"Dexter Jettster",   height:198, mass:102,  hair:"none",        skin:"brown",        eye:"yellow",  birth:null, gender:"masculine", species:"Besalisk",      homeworld:"Ojom"},
+  {name:"Lama Su",           height:229, mass:88,   hair:"none",        skin:"grey",         eye:"black",   birth:null, gender:"masculine", species:"Kaminoan",      homeworld:"Kamino"},
+  {name:"Taun We",           height:213, mass:null, hair:"none",        skin:"grey",         eye:"black",   birth:null, gender:"feminine",  species:"Kaminoan",      homeworld:"Kamino"},
+  {name:"Jocasta Nu",        height:167, mass:null, hair:"white",       skin:"fair",         eye:"blue",    birth:null, gender:"feminine",  species:"Human",         homeworld:"Coruscant"},
+  {name:"R4-P17",            height:96,  mass:null, hair:"none",        skin:"silver, red",  eye:"red, blue",birth:null,gender:"feminine", species:"Droid",         homeworld:"unknown"},
+  {name:"Wat Tambor",        height:193, mass:48,   hair:"none",        skin:"green, grey",  eye:"unknown", birth:null, gender:"masculine", species:"Skakoan",       homeworld:"Skako"},
+  {name:"San Hill",          height:191, mass:null, hair:"none",        skin:"grey",         eye:"gold",    birth:null, gender:"masculine", species:"Muun",          homeworld:"Muunilinst"},
+  {name:"Shaak Ti",          height:178, mass:57,   hair:"none",        skin:"red, blue, white",eye:"black",birth:null,gender:"feminine",  species:"Togruta",       homeworld:"Shili"},
+  {name:"Grievous",          height:216, mass:159,  hair:"none",        skin:"brown, white", eye:"green, yellow",birth:null,gender:"masculine",species:"Kaleesh",   homeworld:"Kalee"},
+  {name:"Tarfful",           height:234, mass:136,  hair:"brown",       skin:"brown",        eye:"blue",    birth:null, gender:"masculine", species:"Wookiee",       homeworld:"Kashyyyk"},
+  {name:"Raymus Antilles",   height:188, mass:79,   hair:"brown",       skin:"light",        eye:"brown",   birth:null, gender:"masculine", species:"Human",         homeworld:"Alderaan"},
+  {name:"Sly Moore",         height:178, mass:48,   hair:"none",        skin:"pale",         eye:"white",   birth:null, gender:"feminine",  species:"Umbaran",       homeworld:"Umbara"},
+  {name:"Tion Medon",        height:206, mass:80,   hair:"none",        skin:"grey",         eye:"black",   birth:null, gender:"masculine", species:"Pau'an",        homeworld:"Utapau"},
+  {name:"Finn",              height:null,mass:null, hair:"black",       skin:"dark",         eye:"dark",    birth:null, gender:"masculine", species:"Human",         homeworld:"unknown"},
+  {name:"Rey",               height:null,mass:null, hair:"brown",       skin:"light",        eye:"hazel",   birth:null, gender:"feminine",  species:"Human",         homeworld:"Jakku"},
+  {name:"Poe Dameron",       height:null,mass:null, hair:"brown",       skin:"light",        eye:"brown",   birth:null, gender:"masculine", species:"Human",         homeworld:"Yavin IV"},
+  {name:"BB8",               height:null,mass:null, hair:"none",        skin:"none",         eye:"black",   birth:null, gender:"masculine", species:"Droid",         homeworld:"unknown"},
+  {name:"Captain Phasma",    height:null,mass:null, hair:"none",        skin:"unknown",      eye:"unknown", birth:null, gender:"feminine",  species:"Human",         homeworld:"unknown"},
+  {name:"Padmé Amidala",     height:165, mass:45,   hair:"brown",       skin:"light",        eye:"brown",   birth:46,   gender:"feminine",  species:"Human",         homeworld:"Naboo"},
+];
+
+// Remove duplicates
+const CHARS = SW.filter((c,i,a) => a.findIndex(x=>x.name===c.name)===i);
+
+// Only chars with at least height OR mass
+const VALID = CHARS.filter(c => c.height !== null || c.mass !== null);
+
+// Species colour palette for avatars
+const SPECIES_COLORS = {
+  'Human':    ['#4fc3f7','#0d2a3a'],
+  'Droid':    ['#78909c','#1a2229'],
+  'Wookiee':  ['#8d6e63','#2a1f1c'],
+  'Yoda\'s species':['#66bb6a','#0f2310'],
+  'Gungan':   ['#26a69a','#092420'],
+  'Twi\'lek': ['#ab47bc','#250d29'],
+  'Hutt':     ['#9ccc65','#1e2a0e'],
+  'default':  ['#ffe81a','#2a2200'],
+};
+function speciesColor(s) {
+  return SPECIES_COLORS[s] || SPECIES_COLORS.default;
+}
+
+// Chart.js defaults
+Chart.defaults.color = '#5a5a7a';
+Chart.defaults.borderColor = '#1e1e3a';
+Chart.defaults.font.family = "'Exo 2', sans-serif";
+Chart.defaults.font.size = 11;
+
+let heightChart, massChart;
+let selectedIdx = null;
+
+/* ── Build sidebar list ── */
+function buildList(filter='') {
+  const list = document.getElementById('char-list');
+  list.innerHTML = '';
+  const q = filter.toLowerCase();
+  VALID.forEach((c, i) => {
+    if (q && !c.name.toLowerCase().includes(q)) return;
+    const [fg, bg] = speciesColor(c.species);
+    const initials = c.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+    const div = document.createElement('label');
+    div.className = 'char-item' + (selectedIdx === i ? ' selected' : '');
+    div.dataset.idx = i;
+    div.innerHTML = `
+      <input type="radio" name="char" value="${i}">
+      <div class="char-avatar" style="background:${bg};color:${fg};">${initials}</div>
+      <div>
+        <div class="char-name">${c.name}</div>
+        <div class="char-species">${c.species} · ${c.homeworld}</div>
+      </div>`;
+    div.addEventListener('click', () => selectChar(i));
+    list.appendChild(div);
+  });
+}
+
+/* ── Select character ── */
+function selectChar(idx) {
+  selectedIdx = idx;
+  const c = VALID[idx];
+  const [fg, bg] = speciesColor(c.species);
+  const initials = c.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+
+  // Update sidebar selection highlight
+  document.querySelectorAll('.char-item').forEach(el => {
+    el.classList.toggle('selected', parseInt(el.dataset.idx) === idx);
+  });
+
+  // Update info card
+  document.getElementById('card-avatar').style.background = bg;
+  document.getElementById('card-avatar').style.color = fg;
+  document.getElementById('card-avatar').style.borderColor = fg;
+  document.getElementById('card-avatar').textContent = initials;
+  document.getElementById('card-name').textContent = c.name;
+  document.getElementById('card-meta').innerHTML = `
+    <div class="meta-item">Species<span>${c.species}</span></div>
+    <div class="meta-item">Homeworld<span>${c.homeworld}</span></div>
+    <div class="meta-item">Gender<span>${c.gender}</span></div>
+    <div class="meta-item">Born<span>${c.birth !== null ? c.birth + ' BBY' : '—'}</span></div>
+    <div class="meta-item">Eye colour<span>${c.eye}</span></div>
+  `;
+  document.getElementById('card-stats').innerHTML = `
+    <div class="big-stat">
+      <div class="big-stat-val" style="color:#4fc3f7;">${c.height !== null ? c.height : '—'}</div>
+      <div class="big-stat-label">cm height</div>
+    </div>
+    <div class="big-stat">
+      <div class="big-stat-val" style="color:#ef5350;">${c.mass !== null ? c.mass : '—'}</div>
+      <div class="big-stat-label">kg mass</div>
+    </div>
+  `;
+
+  // Rebuild charts
+  updateCharts(idx);
+}
+
+/* ── Build / update charts ── */
+function updateCharts(selIdx) {
+  const sel = VALID[selIdx];
+
+  // Only include chars with the relevant value, sort ascending
+  const hData = VALID
+    .filter(c => c.height !== null)
+    .sort((a,b) => a.height - b.height);
+  const mData = VALID
+    .filter(c => c.mass !== null && c.mass < 400) // exclude Jabba outlier for readability
+    .sort((a,b) => a.mass - b.mass);
+
+  // Height colours: selected = accent2 (blue), others = muted teal
+  const hColors = hData.map(c =>
+    c.name === sel.name ? '#4fc3f7' : 'rgba(79,195,247,0.18)'
+  );
+  const hBorders = hData.map(c =>
+    c.name === sel.name ? '#4fc3f7' : 'rgba(79,195,247,0.35)'
+  );
+
+  // Mass colours: selected = accent3 (red), others = muted red
+  const mColors = mData.map(c =>
+    c.name === sel.name ? '#ef5350' : 'rgba(239,83,80,0.18)'
+  );
+  const mBorders = mData.map(c =>
+    c.name === sel.name ? '#ef5350' : 'rgba(239,83,80,0.35)'
+  );
+
+  /* HEIGHT CHART */
+  if (heightChart) heightChart.destroy();
+  heightChart = new Chart(document.getElementById('heightChart'), {
+    type: 'bar',
+    data: {
+      labels: hData.map(c => c.name),
+      datasets: [{
+        label: 'Height (cm)',
+        data: hData.map(c => c.height),
+        backgroundColor: hColors,
+        borderColor: hBorders,
+        borderWidth: 1,
+        borderRadius: 3,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => ` ${ctx.parsed.x} cm`,
+            title: ctx => ctx[0].label,
+          },
+          backgroundColor: '#0d0d1a',
+          borderColor: '#4fc3f7',
+          borderWidth: 1,
+          titleColor: '#4fc3f7',
+          bodyColor: '#e8e8f0',
+        }
+      },
+      scales: {
+        x: {
+          beginAtZero: true,
+          grid: { color: '#1e1e3a' },
+          ticks: { color: '#5a5a7a', font: { size: 10 } }
+        },
+        y: {
+          grid: { display: false },
+          ticks: {
+            color: ctx => hData[ctx.index]?.name === sel.name ? '#4fc3f7' : '#5a5a7a',
+            font: { size: 10,
+              weight: ctx => hData[ctx.index]?.name === sel.name ? '600' : '400'
+            }
+          }
+        }
+      },
+      animation: { duration: 500 }
+    }
+  });
+
+  /* MASS CHART */
+  if (massChart) massChart.destroy();
+  massChart = new Chart(document.getElementById('massChart'), {
+    type: 'bar',
+    data: {
+      labels: mData.map(c => c.name),
+      datasets: [{
+        label: 'Mass (kg)',
+        data: mData.map(c => c.mass),
+        backgroundColor: mColors,
+        borderColor: mBorders,
+        borderWidth: 1,
+        borderRadius: 3,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => ` ${ctx.parsed.x} kg`,
+            title: ctx => ctx[0].label,
+          },
+          backgroundColor: '#0d0d1a',
+          borderColor: '#ef5350',
+          borderWidth: 1,
+          titleColor: '#ef5350',
+          bodyColor: '#e8e8f0',
+        }
+      },
+      scales: {
+        x: {
+          beginAtZero: true,
+          grid: { color: '#1e1e3a' },
+          ticks: { color: '#5a5a7a', font: { size: 10 } }
+        },
+        y: {
+          grid: { display: false },
+          ticks: {
+            color: ctx => mData[ctx.index]?.name === sel.name ? '#ef5350' : '#5a5a7a',
+            font: { size: 10,
+              weight: ctx => mData[ctx.index]?.name === sel.name ? '600' : '400'
+            }
+          }
+        }
+      },
+      animation: { duration: 500 }
+    }
+  });
+}
+
+/* ── Search ── */
+document.getElementById('search').addEventListener('input', e => {
+  buildList(e.target.value);
+});
+
+/* ── Init ── */
+buildList();
+selectChar(0); // default: Luke Skywalker
+</script>
+</body>
+</html>
