@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Data Portfolio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0f0f13; --surface:#1a1a22; --border:#2a2a38;
+  --accent:#7c6df0; --accent2:#e8645a; --accent3:#3ecfaa; --accent4:#f0b429;
+  --text:#f0eff8; --muted:#8b8aa0;
+}
+*{ box-sizing:border-box; margin:0; padding:0; }
+
+body {
+  background:var(--bg); color:var(--text);
+  font-family:'DM Sans',sans-serif;
+  min-height:100vh;
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  padding:48px 24px;
+}
+
+/* ── HEADER ── */
+.hero { text-align:center; margin-bottom:52px; }
+.hero-tag {
+  font-size:11px; font-weight:600; letter-spacing:.12em;
+  text-transform:uppercase; color:var(--accent); margin-bottom:14px;
+}
+.hero-title {
+  font-family:'DM Serif Display',serif;
+  font-size:42px; line-height:1.15; color:var(--text); margin-bottom:14px;
+}
+.hero-title span { color:var(--accent); }
+.hero-sub { font-size:15px; color:var(--muted); max-width:480px; margin:0 auto; line-height:1.7; }
+
+/* ── PROJECT GRID ── */
+.grid {
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(280px,1fr));
+  gap:20px;
+  width:100%; max-width:900px;
+  margin-bottom:52px;
+}
+
+.project-card {
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:18px;
+  padding:28px;
+  text-decoration:none;
+  color:var(--text);
+  display:flex; flex-direction:column;
+  transition:border-color .2s, transform .2s;
+  position:relative; overflow:hidden;
+}
+.project-card::before {
+  content:'';
+  position:absolute; top:-40px; right:-40px;
+  width:140px; height:140px; border-radius:50%;
+  opacity:.12; pointer-events:none;
+}
+.project-card:hover { border-color:var(--card-accent); transform:translateY(-3px); }
+
+.card-icon {
+  width:46px; height:46px; border-radius:12px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:22px; margin-bottom:18px; flex-shrink:0;
+}
+.card-tag {
+  font-size:11px; font-weight:600; letter-spacing:.1em;
+  text-transform:uppercase; margin-bottom:8px;
+}
+.card-title {
+  font-family:'DM Serif Display',serif;
+  font-size:22px; line-height:1.2; margin-bottom:10px;
+}
+.card-desc {
+  font-size:13px; color:var(--muted); line-height:1.7;
+  flex:1; margin-bottom:20px;
+}
+.card-chips { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:20px; }
+.chip {
+  font-size:11px; padding:3px 10px; border-radius:20px; font-weight:500;
+}
+.card-link {
+  display:flex; align-items:center; gap:6px;
+  font-size:13px; font-weight:500;
+}
+.arrow { font-size:16px; transition:transform .2s; }
+.project-card:hover .arrow { transform:translateX(4px); }
+
+/* card 1 — slideshow */
+.card-1 { --card-accent:#7c6df0; }
+.card-1::before { background:#7c6df0; }
+.card-1 .card-icon { background:rgba(124,109,240,.15); color:#7c6df0; }
+.card-1 .card-tag  { color:#7c6df0; }
+.card-1 .chip      { background:rgba(124,109,240,.12); color:#a89ff5; }
+.card-1 .card-link { color:#7c6df0; }
+
+/* card 2 — starwars */
+.card-2 { --card-accent:#f0b429; }
+.card-2::before { background:#f0b429; }
+.card-2 .card-icon { background:rgba(240,180,41,.15); color:#f0b429; }
+.card-2 .card-tag  { color:#f0b429; }
+.card-2 .chip      { background:rgba(240,180,41,.12); color:#f0b429; }
+.card-2 .card-link { color:#f0b429; }
+
+/* card 3 — placeholder for next project -->
+.card-3 { --card-accent:#3ecfaa; border-style:dashed; opacity:.6; cursor:default; }
+.card-3:hover { transform:none; }
+.card-3::before { background:#3ecfaa; }
+.card-3 .card-icon { background:rgba(62,207,170,.1); color:#3ecfaa; }
+.card-3 .card-tag  { color:#3ecfaa; }
+.card-3 .chip      { background:rgba(62,207,170,.1); color:#3ecfaa; }
+.card-3 .card-link { color:var(--muted); }
+
+/* ── FOOTER ── */
+footer {
+  font-size:12px; color:var(--muted);
+  text-align:center; line-height:1.8;
+}
+footer a { color:var(--accent); text-decoration:none; }
+footer a:hover { text-decoration:underline; }
+
+/* ── DIVIDER LINE ── */
+.line {
+  width:60px; height:2px; background:var(--accent);
+  border-radius:2px; margin:0 auto 28px;
+  opacity:.4;
+}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="hero-tag">Data Portfolio · 2026</div>
+  <div class="hero-title">My <span>Data</span><br>Visualisations</div>
+  <div class="line"></div>
+  <div class="hero-sub">Interactive charts and data stories built with Chart.js and hosted on GitHub Pages. Click any project to explore.</div>
+</div>
+
+<div class="grid">
+
+  <!-- ── PROJECT 1: Slideshow ── -->
+  <a class="project-card card-1" href="slideshow.html">
+    <div class="card-icon">&#9646;&#9646;&#9646;</div>
+    <div class="card-tag">Presentation</div>
+    <div class="card-title">Data Slideshow</div>
+    <div class="card-desc">An 11-slide interactive presentation with bar charts, donut charts, scatter plots, bubble charts, stacked bars, and an animated bar chart race. Navigate with arrow keys.</div>
+    <div class="card-chips">
+      <span class="chip">11 slides</span>
+      <span class="chip">Bar · Donut · Scatter</span>
+      <span class="chip">Bar Race</span>
+      <span class="chip">Chart.js</span>
+    </div>
+    <div class="card-link">Open slideshow <span class="arrow">→</span></div>
+  </a>
+
+  <!-- ── PROJECT 2: Star Wars ── -->
+  <a class="project-card card-2" href="starwars.html">
+    <div class="card-icon">&#9733;</div>
+    <div class="card-tag">Explorer</div>
+    <div class="card-title">Star Wars Characters</div>
+    <div class="card-desc">Select any character from the dplyr starwars dataset and instantly compare their height and mass against all others in the galaxy. Search, filter, explore.</div>
+    <div class="card-chips">
+      <span class="chip">87 characters</span>
+      <span class="chip">Height · Mass</span>
+      <span class="chip">Radio select</span>
+      <span class="chip">Chart.js</span>
+    </div>
+    <div class="card-link">Open explorer <span class="arrow">→</span></div>
+  </a>
+
+  <!-- ── PROJECT 3: Coming soon ── -->
+  <div class="project-card card-3">
+    <div class="card-icon">+</div>
+    <div class="card-tag">Coming soon</div>
+    <div class="card-title">Your Next Project</div>
+    <div class="card-desc">Upload your own R or Python data and I will build you a custom interactive chart page to add here.</div>
+    <div class="card-chips">
+      <span class="chip">Your data</span>
+      <span class="chip">Any chart type</span>
+    </div>
+    <div class="card-link">Add a project <span class="arrow">→</span></div>
+  </div>
+
+</div>
+
+<footer>
+  Built with <a href="https://www.chartjs.org" target="_blank">Chart.js</a> &nbsp;·&nbsp;
+  Hosted on <a href="https://pages.github.com" target="_blank">GitHub Pages</a> &nbsp;·&nbsp;
+  Data from <a href="https://dplyr.tidyverse.org" target="_blank">R / dplyr</a>
+  <br>
+  Replace this footer text with your name and links
+</footer>
+
+</body>
+</html>
